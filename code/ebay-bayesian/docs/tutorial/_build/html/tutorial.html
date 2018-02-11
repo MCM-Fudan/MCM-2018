@@ -1,0 +1,532 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>1   Introduction &#8212; Bayesian Belief Networks in Python Tutorial</title>
+    <link rel="stylesheet" href="_static/agogo.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Bayesian Belief Network Python Tutorial" href="index.html" /> 
+  </head>
+  <body>
+    <div class="header-wrapper">
+      <div class="header">
+        <div class="headertitle"><a
+          href="index.html">Bayesian Belief Networks in Python Tutorial</a></div>
+        <div class="rel">
+          <a href="index.html" title="Bayesian Belief Network Python Tutorial"
+             accesskey="P">previous</a> |
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a>
+        </div>
+       </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="content">
+        <div class="document">
+            
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="introduction">
+<h1>1&nbsp;&nbsp;&nbsp;Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p>This short tutorial will show you how
+to build and perform exact inference
+on a simple Bayesian Belief Network.</p>
+<p>The problem we will be modelling is the
+famous <a class="reference external" href="http://en.wikipedia.org/wiki/Monty_Hall_problem">Monty Hall Problem</a>.
+We choose the Monty Hall Problem as it has several
+features that make it ideal for a tutorial
+of this nature:</p>
+<ul class="simple">
+<li>It is a small problem, having only three variables</li>
+<li>It has an interesting and un-expected outcome (at first!)</li>
+<li>The conditional probabilities are simple to code in a few lines of Python</li>
+</ul>
+</div>
+<div class="section" id="statement-of-problem">
+<h1>2&nbsp;&nbsp;&nbsp;Statement of Problem<a class="headerlink" href="#statement-of-problem" title="Permalink to this headline">¶</a></h1>
+<p>A television game show works as follows:</p>
+<p>A host, by the name of Monty Hall, invites
+a guest to select one of three doors.
+He explains to the guest that behind
+one of the doors is a car, and behind
+each of the other two, a goat.
+The host however does
+not tell the guest which item is hidden
+behind each door.</p>
+<p>The guest gets to keep the item that
+is behind his choice of door.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">We will assume that the guest has no prior knowledge of what is hidden behind each door.
+Further we will assume that for most guests its more desirable to win a car than a goat!</p>
+</div>
+<p>After making his initial choice, Monty
+makes the game more interesting by
+opening one of the two remaining doors.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Since Monty Hall <em>knows</em> which door conceals
+the car he will never open that door so he
+will always reveal a goat.</p>
+</div>
+<p>After opening one of the doors, Monty
+now offers the guest the opportunity to
+switch his original choice of door.</p>
+<p>The question we are trying to
+answer is:</p>
+<p><strong>Does it matter whether the guest sticks with their original
+choice of door or should he switch doors?</strong></p>
+<p>Many people are inclined to say that it
+does not matter.</p>
+</div>
+<div class="section" id="building-the-model-in-python">
+<h1>3&nbsp;&nbsp;&nbsp;Building The Model in Python<a class="headerlink" href="#building-the-model-in-python" title="Permalink to this headline">¶</a></h1>
+<p>Building Bayesian Belief Network models
+with this package is very straight forward providing
+we follow some simple conventions and rules.</p>
+<div class="section" id="identify-the-variables">
+<h2>3.1&nbsp;&nbsp;&nbsp;Identify the Variables<a class="headerlink" href="#identify-the-variables" title="Permalink to this headline">¶</a></h2>
+<p>Firstly for any problem we are trying to
+model it helps to identify the variables (strictly <a class="reference external" href="http://en.wikipedia.org/wiki/Random_variable">Random Variables</a>)</p>
+<p>For the Monty Hall problem it further helps to
+think of the problem in terms of <em>events</em>. (This is not necessarily the case for all problems)</p>
+<p>In the Monty hall problem, the following events occur, listed in chronological order:</p>
+<ol class="arabic simple">
+<li>The car is hidden behind one of the three doors prior to the guest arriving</li>
+<li>The guest selects a door</li>
+<li>Monty hall opens one of the two remaining doors</li>
+</ol>
+<p>Each of the above events will be a <strong>variable</strong> in our model.
+Lets call these variables:</p>
+<ol class="arabic simple">
+<li>prize_door</li>
+<li>guest_door</li>
+<li>monty_door</li>
+</ol>
+</div>
+<div class="section" id="identify-the-possible-values-for-the-variables">
+<h2>3.2&nbsp;&nbsp;&nbsp;Identify the Possible Values for the Variables<a class="headerlink" href="#identify-the-possible-values-for-the-variables" title="Permalink to this headline">¶</a></h2>
+<p>Now when we are building a Bayesian Belief Network
+we need to identify not only the variables of the model,
+but also what <em>values</em> they can take.</p>
+<p>In this case its simple, there are three doors
+so lets call these <strong>A</strong>, <strong>B</strong> and <strong>C</strong>.
+Thus all three variables can take on any
+of the values <strong>A</strong>, <strong>B</strong> or <strong>C</strong>.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">We call the set of values a variable
+may take the variable’s <em>domain</em>. It is
+not always the case that all the variables
+have the same domain.</p>
+</div>
+</div>
+<div class="section" id="create-a-mental-picture-of-the-network">
+<h2>3.3&nbsp;&nbsp;&nbsp;Create a Mental Picture of the Network<a class="headerlink" href="#create-a-mental-picture-of-the-network" title="Permalink to this headline">¶</a></h2>
+<p>We will now begin building the actual Bayesian Belief Network (BBN).
+A BBN is a Directed Acyclic Graph (DAG), which means that
+we need to construct a graph consisting of nodes (also called <em>vertices</em>)
+and directed edges.</p>
+<p>Each variable identified in the previous section, will be a node in the
+network.  We start off by placing a node representing each variable into our graph:</p>
+<div class="figure align-center" id="id1">
+<a class="reference internal image-reference" href="_images/monty_hall_bbn_variables.png"><img alt="Monty Hall Variables" src="_images/monty_hall_bbn_variables.png" style="width: 400px;" /></a>
+<p class="caption"><span class="caption-text">Monty Hall Variables</span></p>
+</div>
+<p>Now we need to add the edges. Edges in Probabilistic Graphical Models
+represent the fact that two nodes connected by each edge <em>influence</em> one another.
+In a BBN, since the edges are directed, implying a “parent”/”child” relationship,
+an edge represents the fact that the child variable is conditionally dependent on
+the parent variable.
+This means that the value the child node takes, is dependent on the value
+(or value) of its parent (or parents).
+Thinking again about the events in the Monty Hall problem, when Monty
+opens the door to reveal the goat, his choice <em>depends</em> on which
+door the prize is hidden behind. (Since he will never choose the
+door concealing the car).
+Similarly Monty will never choose the same door as the guest,
+this would defeat the purpose of the game.
+We thus create a edge starting from the prize door node,
+and ending at the monty_door node. Similarly, we create an edge
+starting at the guest_door and ending at monty_door.
+The final structure of our BBN graph looks like this:</p>
+<div class="figure align-center" id="id2">
+<a class="reference internal image-reference" href="_images/monty_hall_bbn.png"><img alt="Monty Hall Graph" src="_images/monty_hall_bbn.png" style="width: 400px;" /></a>
+<p class="caption"><span class="caption-text">Monty Hall Nodes and Edges</span></p>
+</div>
+</div>
+<div class="section" id="create-the-python-function-stubs">
+<h2>3.4&nbsp;&nbsp;&nbsp;Create the Python Function Stubs<a class="headerlink" href="#create-the-python-function-stubs" title="Permalink to this headline">¶</a></h2>
+<p>Now that we have constructed our graph, we are finally
+ready to start encoding the model in Python.
+In this package, every node in the graph is
+represented by a Python function. (Any callable will do).</p>
+<p>The parameters of the function represent the variables
+in the model. For the prize_door node we thus create the
+following stub:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">f_prize_door</span><span class="p">(</span><span class="n">prize_door</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>Similarly for the guest_door node, we will create the following
+stub:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">f_guest_door</span><span class="p">(</span><span class="n">guest_door</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>Now for the third and final node in our graph, monty_door.
+The Python function for this node is a little more
+interesting. Since this node has edges coming into
+it from both the prize_door node and the guest_door node,
+we will add those two variables into the functions
+parameter list:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">f_monty_door</span><span class="p">(</span><span class="n">prize_door</span><span class="p">,</span> <span class="n">guest_door</span><span class="p">,</span> <span class="n">monty_door</span><span class="p">):</span>
+    <span class="k">pass</span>
+</pre></div>
+</div>
+<p>There are several important points to note about the three Python
+function stubs we have introduced here:</p>
+<ol class="arabic simple">
+<li>The parameter names are just the same as the variable names for our model</li>
+<li>The functions represent the nodes of the graph</li>
+<li>To distinguish between node names and variable names we have prefixed the function names with “<a href="#id3"><span class="problematic" id="id4">f_</span></a>” (Note that this is simply a convention, you can call them anything but as you will see this convention is used in all the examples in this package.)</li>
+<li>Nodes that have parents need to include the parent variables in their parameters.</li>
+<li>There are exactly three functions, and exactly three variables representing the three events in the model.</li>
+<li>Each function introduces one new variable into the model</li>
+</ol>
+</div>
+<div class="section" id="filling-in-the-details">
+<h2>3.5&nbsp;&nbsp;&nbsp;Filling in the details<a class="headerlink" href="#filling-in-the-details" title="Permalink to this headline">¶</a></h2>
+<p>No BBN is complete without having both the graph <em>and</em> the distributions governing
+the variables.
+We will now start filling out the prior and conditional probabilities for each
+of the three variables. While doing this it helps to think of the functions in this way:</p>
+<p>Each function must return a real number between 0 and 1, representing the
+probability that the variable it represents takes on a particular value in the
+variable’s domain.</p>
+<p>In the case of f_prize_door, we want to return for each possible value of <strong>A</strong>, <strong>B</strong>, <strong>C</strong> (ie each door) the probability that the prize is hidden behind that door.
+Assuming that the door is hidden randomly behind any of the three doors the probability of it being behind any particular one is 1 / 3. Lets modify the stub to reflect this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">f_prize_door</span><span class="p">(</span><span class="n">prize_door</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mf">0.33333333</span>
+</pre></div>
+</div>
+<p>Since the guest has no knowledge of where the prize is hidden it
+is obvious that the f_guest_door function will also simply return 1 / 3:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">f_guest_door</span><span class="p">(</span><span class="n">guest_door</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mf">0.33333333</span>
+</pre></div>
+</div>
+<p>For the more interesting function, f_monty_door, we need to encode the likelihood of the variable <strong>monty_door</strong> having each of the three values <strong>A</strong>, <strong>B</strong>, <strong>C</strong>, <strong>given</strong> the value of its parent nodes <strong>prize_door</strong> and <strong>guest_door</strong>.
+If the guest happens to have chosen correctly, then Monty can essentially choose any of the remaining doors at random. On the other hand if the guest got it wrong,
+then since Monty can open neither the guests choice nor the prize door, he has
+only one choice: the door concealing the goat which the guest did not choose. The encoding in Python is below:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">f_monty_door</span><span class="p">(</span><span class="n">prize_door</span><span class="p">,</span> <span class="n">guest_door</span><span class="p">,</span> <span class="n">monty_door</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">prize_door</span> <span class="o">==</span> <span class="n">guest_door</span><span class="p">:</span>  <span class="c1"># Guest was correct!</span>
+        <span class="k">if</span> <span class="n">prize_door</span> <span class="o">==</span> <span class="n">monty_door</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>     <span class="c1"># Monty never reveals the prize</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.5</span>   <span class="c1"># Monty can choose either goat door</span>
+    <span class="k">elif</span> <span class="n">prize_door</span> <span class="o">==</span> <span class="n">monty_door</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>         <span class="c1"># Again, Monty wont reveal the prize</span>
+    <span class="k">elif</span> <span class="n">guest_door</span> <span class="o">==</span> <span class="n">monty_door</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>         <span class="c1"># Monty will never choose the guest door</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># This covers all cases where</span>
+        <span class="c1"># the guest has *not* guessed</span>
+        <span class="c1"># correctly and Monty chooses</span>
+        <span class="c1"># the only remaining door that</span>
+        <span class="c1"># wont reveal the prize.</span>
+        <span class="k">return</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">There are several other variations of encoding the same function.</p>
+</div>
+</div>
+<div class="section" id="tieing-it-all-together">
+<h2>3.6&nbsp;&nbsp;&nbsp;Tieing it all Together<a class="headerlink" href="#tieing-it-all-together" title="Permalink to this headline">¶</a></h2>
+<p>We will now complete the program and perform some inference
+on the graph. To create the actual graph, we need the
+function build_bbn from the bbn module. Add this line
+to the top of your file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">bayesian.bbn</span> <span class="kn">import</span> <span class="n">build_bbn</span>
+</pre></div>
+</div>
+<p>Now lets fill in the rest of the program, add this to the
+bottom of the file:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="n">g</span> <span class="o">=</span> <span class="n">build_bbn</span><span class="p">(</span>
+        <span class="n">f_prize_door</span><span class="p">,</span>
+        <span class="n">f_guest_door</span><span class="p">,</span>
+        <span class="n">f_monty_door</span><span class="p">,</span>
+        <span class="n">domains</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">prize_door</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">],</span>
+            <span class="n">guest_door</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">],</span>
+            <span class="n">monty_door</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">]))</span>
+</pre></div>
+</div>
+<p>What the above piece of code does is create an
+instance of the BBN class. The factory function, build_bbn
+takes as parameters, all the functions representing the
+nodes in the graph, and an optional domains dictionary
+which specifies what the domain of each variable is.
+Note that the structure of the graph is inferred from
+the functions and the parameters.</p>
+<p>The entire program should look like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">bayesian.bbn</span> <span class="kn">import</span> <span class="n">build_bbn</span>
+
+
+<span class="k">def</span> <span class="nf">f_prize_door</span><span class="p">(</span><span class="n">prize_door</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mf">0.33333333</span>
+
+
+<span class="k">def</span> <span class="nf">f_guest_door</span><span class="p">(</span><span class="n">guest_door</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mf">0.33333333</span>
+
+
+<span class="k">def</span> <span class="nf">f_monty_door</span><span class="p">(</span><span class="n">prize_door</span><span class="p">,</span> <span class="n">guest_door</span><span class="p">,</span> <span class="n">monty_door</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">prize_door</span> <span class="o">==</span> <span class="n">guest_door</span><span class="p">:</span>  <span class="c1"># Guest was correct!</span>
+        <span class="k">if</span> <span class="n">prize_door</span> <span class="o">==</span> <span class="n">monty_door</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>     <span class="c1"># Monty never reveals the prize</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.5</span>   <span class="c1"># Monty can choose either goat door</span>
+    <span class="k">elif</span> <span class="n">prize_door</span> <span class="o">==</span> <span class="n">monty_door</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>         <span class="c1"># Again, Monty wont reveal the prize</span>
+    <span class="k">elif</span> <span class="n">guest_door</span> <span class="o">==</span> <span class="n">monty_door</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>         <span class="c1"># Monty will never choose the guest door</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># This covers all case where</span>
+        <span class="c1"># the guest has *not* guessed</span>
+        <span class="c1"># correctly and Monty chooses</span>
+        <span class="c1"># the only remaining door that</span>
+        <span class="c1"># wont reveal the prize.</span>
+        <span class="k">return</span> <span class="mi">1</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+
+    <span class="n">g</span> <span class="o">=</span> <span class="n">build_bbn</span><span class="p">(</span>
+        <span class="n">f_prize_door</span><span class="p">,</span>
+        <span class="n">f_guest_door</span><span class="p">,</span>
+        <span class="n">f_monty_door</span><span class="p">,</span>
+        <span class="n">domains</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">prize_door</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">],</span>
+            <span class="n">guest_door</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">],</span>
+            <span class="n">monty_door</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="s1">&#39;B&#39;</span><span class="p">,</span> <span class="s1">&#39;C&#39;</span><span class="p">]))</span>
+</pre></div>
+</div>
+<p>Save the above code in a file called monty_hall.py</p>
+</div>
+<div class="section" id="performing-inference-with-our-bbn">
+<h2>3.7&nbsp;&nbsp;&nbsp;Performing Inference with our BBN<a class="headerlink" href="#performing-inference-with-our-bbn" title="Permalink to this headline">¶</a></h2>
+<p>Assuming that the Bayesian package has been
+installed correctly we will now <em>query</em> the BBN.</p>
+<p>Run the following command:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>$ python -i monty_hall.py
+</pre></div>
+</div>
+<p>The -i command line argument causes the Python interpreter to go into
+interactive mode after executing all of the code in the file.
+This is a handy way for us to query the model.
+The BBN class is primarily queried through the query method.
+There is a user friendly wrapper around the query method called q.
+Lets start off by calling q without any arguments, you should
+see something like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">q</span><span class="p">()</span>
+<span class="go">+------------+-------+----------+</span>
+<span class="go">| Node       | Value | Marginal |</span>
+<span class="go">+------------+-------+----------+</span>
+<span class="go">| guest_door | A     | 0.333333 |</span>
+<span class="go">| guest_door | B     | 0.333333 |</span>
+<span class="go">| guest_door | C     | 0.333333 |</span>
+<span class="go">| monty_door | A     | 0.333333 |</span>
+<span class="go">| monty_door | B     | 0.333333 |</span>
+<span class="go">| monty_door | C     | 0.333333 |</span>
+<span class="go">| prize_door | A     | 0.333333 |</span>
+<span class="go">| prize_door | B     | 0.333333 |</span>
+<span class="go">| prize_door | C     | 0.333333 |</span>
+<span class="go">+------------+-------+----------+</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>How do we interpret this output? The q method essentially
+calls the query method with the same arguments it was supplied.
+It then formats the results from the query method in a nice
+human readable table. The columns of the table
+are Node, Value, and Marginal. (In this section we will
+use the terms <em>node</em> and <em>variable</em> interchangeably since
+every variable is represented by exactly one node)
+You will notice that for each variable, and for each value
+in that variables domain, a marginal is shown in the table.
+All marginals in this query have the same value of 0.33333.
+This is because we did not provide any <em>evidence</em> to the model
+and in the absence of any evidence, these marginals would
+indeed approximately 1 / 3 for each door.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">In BBN terminology we call the assignment of
+a value to a variable <em>evidence</em>. We call
+any set of assignments of zero or more variables
+to a value a <em>configuration</em> of the graph.</p>
+</div>
+<p>Now lets provide some evidence to the BBN and query it again.
+Suppose we have observed that the guest chose door <em>A</em>.
+Type the following in the Python interpreter interactive session:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">q</span><span class="p">(</span><span class="n">guest_door</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">)</span>
+<span class="go">+-------------+-------+----------+</span>
+<span class="go">| Node        | Value | Marginal |</span>
+<span class="go">+-------------+-------+----------+</span>
+<span class="go">| guest_door  | B     | 0.000000 |</span>
+<span class="go">| guest_door  | C     | 0.000000 |</span>
+<span class="go">| guest_door* | A*    | 1.000000 |</span>
+<span class="go">| monty_door  | A     | 0.000000 |</span>
+<span class="go">| monty_door  | B     | 0.500000 |</span>
+<span class="go">| monty_door  | C     | 0.500000 |</span>
+<span class="go">| prize_door  | A     | 0.333333 |</span>
+<span class="go">| prize_door  | B     | 0.333333 |</span>
+<span class="go">| prize_door  | C     | 0.333333 |</span>
+<span class="go">+-------------+-------+----------+</span>
+</pre></div>
+</div>
+<p>Notice the changes in the marginal values <em>after</em> we have
+supplied the observation that the guest chose door <strong>A</strong>.
+The marginal for the variable guest_door having the value <strong>A</strong>
+is now 1, i.e. certainty, since thats what we observed.
+Likewise the marginal for guest_door having any of the other
+values <strong>B</strong> or <strong>C</strong> is now zero since we know the guest
+did not choose any of those doors.
+Notice also that the evidenced variable, and its value
+are marked in the table with an asterisk, reminding us
+of what evidence was supplied to this query.
+Look at the monty_door variable next. Notice that the
+marginal for the monty_door variable to have the
+value <strong>A</strong> is 0. This is because the rules of the game
+that we have encoded do not allow Monty to pick the same
+door as the guest. The marginals for the monty_door
+variable having the values <strong>B</strong> or <strong>C</strong> are each 0.5
+reflecting the fact that without any further evidence
+its equally likely for Monty to choose any of the
+two remaining doors.</p>
+<p>Now lets suppose that we observe Monty opening
+door <strong>B</strong> and making the offer of a switch to the
+guest. Lets add this evidence to our query:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">g</span><span class="o">.</span><span class="n">q</span><span class="p">(</span><span class="n">guest_door</span><span class="o">=</span><span class="s1">&#39;A&#39;</span><span class="p">,</span> <span class="n">monty_door</span><span class="o">=</span><span class="s1">&#39;B&#39;</span><span class="p">)</span>
+<span class="go">+-------------+-------+----------+</span>
+<span class="go">| Node        | Value | Marginal |</span>
+<span class="go">+-------------+-------+----------+</span>
+<span class="go">| guest_door  | B     | 0.000000 |</span>
+<span class="go">| guest_door  | C     | 0.000000 |</span>
+<span class="go">| guest_door* | A*    | 1.000000 |</span>
+<span class="go">| monty_door  | A     | 0.000000 |</span>
+<span class="go">| monty_door  | C     | 0.000000 |</span>
+<span class="go">| monty_door* | B*    | 1.000000 |</span>
+<span class="go">| prize_door  | A     | 0.333333 |</span>
+<span class="go">| prize_door  | B     | 0.000000 |</span>
+<span class="go">| prize_door  | C     | 0.666667 |</span>
+<span class="go">+-------------+-------+----------+</span>
+<span class="go">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>Notice once again that all evidenced variables and the
+values they have been assigned have been marked with
+an asterisk.
+Now lets look at the marginal column for the
+variable prize_door. Herein lies the answer to
+our original question of whether it makes a difference
+or not if the guest switches their choice.</p>
+<p>As we can see, given the evidence we supplied,
+the prize is <em>twice</em> as likely (.667/.333) to be
+behind door <strong>C</strong> than behind door <strong>A</strong>.
+The guest should thus switch doors.</p>
+<p>This concludes this short introductory tutorial.
+Future tutorials will show other functionality in this
+package.</p>
+<p>Good luck and have fun building your own models!</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+        </div>
+        <div class="sidebar">
+          <h3>Table Of Contents</h3>
+          <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">1&nbsp;&nbsp;&nbsp;Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#statement-of-problem">2&nbsp;&nbsp;&nbsp;Statement of Problem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#building-the-model-in-python">3&nbsp;&nbsp;&nbsp;Building The Model in Python</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#identify-the-variables">3.1&nbsp;&nbsp;&nbsp;Identify the Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#identify-the-possible-values-for-the-variables">3.2&nbsp;&nbsp;&nbsp;Identify the Possible Values for the Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#create-a-mental-picture-of-the-network">3.3&nbsp;&nbsp;&nbsp;Create a Mental Picture of the Network</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#create-the-python-function-stubs">3.4&nbsp;&nbsp;&nbsp;Create the Python Function Stubs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#filling-in-the-details">3.5&nbsp;&nbsp;&nbsp;Filling in the details</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tieing-it-all-together">3.6&nbsp;&nbsp;&nbsp;Tieing it all Together</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performing-inference-with-our-bbn">3.7&nbsp;&nbsp;&nbsp;Performing Inference with our BBN</a></li>
+</ul>
+</li>
+</ul>
+
+          <h3 style="margin-top: 1.5em;">Search</h3>
+          <form class="search" action="search.html" method="get">
+            <input type="text" name="q" />
+            <input type="submit" value="Go" />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+          </form>
+          <p class="searchtip" style="font-size: 90%">
+            Enter search terms or a module, class or function name.
+          </p>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+    <div class="footer-wrapper">
+      <div class="footer">
+        <div class="left">
+          <a href="index.html" title="Bayesian Belief Network Python Tutorial"
+             >previous</a> |
+          <a href="genindex.html" title="General Index"
+             >index</a>
+            <br/>
+            <a href="_sources/tutorial.rst.txt"
+               rel="nofollow">Show Source</a>
+        </div>
+
+        <div class="right">
+          
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2013, Neville Newey.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.4.
+    </div>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+  </body>
+</html>

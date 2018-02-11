@@ -1,0 +1,7 @@
+^\.Rprofile$
+^.*\.Rproj$
+^\.Rproj\.user$
+^cran-comments\.md$
+^\.travis\.yml$
+^run_tests\.R$
+^.*\.dcf$
